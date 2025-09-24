@@ -1,43 +1,62 @@
 package core.basesyntax;
 
+import java.util.Arrays;
+
 public class MyHashMap<K, V> implements MyMap<K, V> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     private int size;
-    private Node[] nodes;
+    private Node<K, V>[] nodes;
 
     public MyHashMap() {
-        Node[] nodes = new Node[DEFAULT_INITIAL_CAPACITY];
+        this.nodes = (Node<K, V>[]) new Node[DEFAULT_INITIAL_CAPACITY];
     }
 
     @Override
     public void put(K key, V value) {
-        Node<K, V> newNode = createNewNode(key, value);
-        int hashCodeOfNewNode = newNode.hashCode();
-        int indexOfKey = hashCodeOfNewNode % nodes.length;
         ensureCapacity(size + 1);
-        if (nodes[indexOfKey] != null) {
-            Node<K,V> current = nodes[indexOfKey];
-            while (nodes[indexOfKey].next != null){
-                current=current.next;
+        if (key == null) {
+            if (nodes[0] != null) {
+                nodes[0].value = value;
+                return;
+            } else {
+                nodes[0] = new Node<>(key, value);
+                size++;
             }
-            current.next = newNode;
-        } else {
-            nodes[indexOfKey] = newNode;
+            return;
         }
-        size++;
+        int index = (key.hashCode() & 0x7fffffff) % nodes.length;
+        if (nodes[index] == null) {
+            nodes[index] = new Node<>(key, value);
+            size++;
+        } else {
+            Node<K, V> current = nodes[index];
+            while (true) {
+                if (current.key.equals(key)) {
+                    current.value = value;
+                    return;
+                }
+                if (current.next == null) break;
+                current = current.next;
+            }
+            current.next = new Node<>(key, value);
+            size++;
+        }
     }
+
 
     @Override
     public V getValue(K key) {
-        for (Node node : nodes) {
-            Node<K,V> current = node;
-            while (current != null) {
-                if (current.kay.equals(key)) {
-                    return current.value;
-                }
-                current = current.next;
+        if (key == null) {
+            return nodes[0] != null ? nodes[0].value : null;
+        }
+        int index = (key.hashCode() & 0x7fffffff) % nodes.length;
+        Node<K,V> current = nodes[index];
+        while (current != null) {
+            if (current.key.equals(key)) {
+                return current.value;
             }
+            current = current.next;
         }
         return null;
     }
@@ -47,45 +66,35 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
         return size;
     }
 
-    private Node createNewNode(K kay, V value) {
-        return new Node(kay, value);
-    }
-
     private void ensureCapacity(int minCapacity) {
-        if (minCapacity > nodes.length * DEFAULT_LOAD_FACTOR) {
+        if (nodes.length * DEFAULT_LOAD_FACTOR <= minCapacity) {
             resize();
         }
-        return;
     }
 
     private void resize() {
-        int[] newNodes = new int[nodes.length * 2];
-        for (int i = 0; i < nodes.length; i++) {
-            Node<K,V> current = nodes[i];
-            while (current != null) {
-                newNodes.put(current);
-                current = current.next;
+        Node<K, V>[] newNodes = (Node<K, V>[]) new Node[nodes.length * 2];
+        for (Node<K, V> node : nodes) {
+            while (node != null) {
+                Node<K, V> next = node.next;
+                int index = (node.key == null ? 0 : (node.key.hashCode() & 0x7fffffff) % newNodes.length);
+                node.next = newNodes[index];
+                newNodes[index] = node;
+                node = next;
             }
         }
+        this.nodes = newNodes;
     }
 
     private class Node<K, V> {
-        private int hashCode;
-        private Node next;
-        private K kay;
+        private Node<K, V> next;
+        private K key;
         private V value;
 
-        public Node(K kay, V value) {
-            this.kay = kay;
+        public Node(K key, V value) {
+            this.key = key;
             this.value = value;
             next = null;
-        }
-
-        public int hashKode() {
-            int hashCode = 17;
-            hashKode = hashKode * 31 + kay.hashCode();
-            this.hashCode = hashCode;
-            return hashCode;
         }
     }
 }

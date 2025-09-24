@@ -1,10 +1,11 @@
 package core.basesyntax;
 
-import java.util.Arrays;
-
 public class MyHashMap<K, V> implements MyMap<K, V> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final int RESIZE_MULTIPLIER = 2;
+    private static final int HASH_MASK = 0x7fffffff;
+    private static final int NULL_KEY_BUCKET = 0;
     private int size;
     private Node<K, V>[] nodes;
 
@@ -15,45 +16,31 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
     @Override
     public void put(K key, V value) {
         ensureCapacity(size + 1);
-        if (key == null) {
-            if (nodes[0] != null) {
-                nodes[0].value = value;
-                return;
-            } else {
-                nodes[0] = new Node<>(key, value);
-                size++;
-            }
-            return;
-        }
-        int index = (key.hashCode() & 0x7fffffff) % nodes.length;
+        int index = (key == null) ? NULL_KEY_BUCKET : (key.hashCode() & HASH_MASK) % nodes.length;
         if (nodes[index] == null) {
             nodes[index] = new Node<>(key, value);
             size++;
-        } else {
-            Node<K, V> current = nodes[index];
-            while (true) {
-                if (current.key.equals(key)) {
-                    current.value = value;
-                    return;
-                }
-                if (current.next == null) break;
-                current = current.next;
-            }
-            current.next = new Node<>(key, value);
-            size++;
+            return;
         }
+        Node<K, V> current = nodes[index];
+        while (true) {
+            if ((key == null && current.key == null) || (key != null && key.equals(current.key))) {
+                current.value = value;
+                return;
+            }
+            if (current.next == null) break;
+            current = current.next;
+        }
+        current.next = new Node<>(key, value);
+        size++;
     }
-
 
     @Override
     public V getValue(K key) {
-        if (key == null) {
-            return nodes[0] != null ? nodes[0].value : null;
-        }
-        int index = (key.hashCode() & 0x7fffffff) % nodes.length;
-        Node<K,V> current = nodes[index];
+        int index = (key == null) ? NULL_KEY_BUCKET : (key.hashCode() & HASH_MASK) % nodes.length;
+        Node<K, V> current = nodes[index];
         while (current != null) {
-            if (current.key.equals(key)) {
+            if ((key == null && current.key == null) || (key != null && key.equals(current.key))) {
                 return current.value;
             }
             current = current.next;
@@ -73,11 +60,12 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
     }
 
     private void resize() {
-        Node<K, V>[] newNodes = (Node<K, V>[]) new Node[nodes.length * 2];
+        Node<K, V>[] newNodes = (Node<K, V>[]) new Node[nodes.length * RESIZE_MULTIPLIER];
         for (Node<K, V> node : nodes) {
             while (node != null) {
                 Node<K, V> next = node.next;
-                int index = (node.key == null ? 0 : (node.key.hashCode() & 0x7fffffff) % newNodes.length);
+                int index = (node.key == null ?
+                        NULL_KEY_BUCKET : (node.key.hashCode() & HASH_MASK) % newNodes.length);
                 node.next = newNodes[index];
                 newNodes[index] = node;
                 node = next;

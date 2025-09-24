@@ -54,7 +54,7 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
     }
 
     private void ensureCapacity(int minCapacity) {
-        if (nodes.length * DEFAULT_LOAD_FACTOR <= minCapacity) {
+        if (nodes.length * DEFAULT_LOAD_FACTOR < minCapacity) {
             resize();
         }
     }

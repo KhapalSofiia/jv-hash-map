@@ -28,7 +28,9 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
                 current.value = value;
                 return;
             }
-            if (current.next == null) break;
+            if (current.next == null) {
+                break;
+            }
             current = current.next;
         }
         current.next = new Node<>(key, value);
@@ -64,8 +66,8 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
         for (Node<K, V> node : nodes) {
             while (node != null) {
                 Node<K, V> next = node.next;
-                int index = (node.key == null ?
-                        NULL_KEY_BUCKET : (node.key.hashCode() & HASH_MASK) % newNodes.length);
+                int index = (node.key == null
+                        ? NULL_KEY_BUCKET : (node.key.hashCode() & HASH_MASK) % newNodes.length);
                 node.next = newNodes[index];
                 newNodes[index] = node;
                 node = next;
